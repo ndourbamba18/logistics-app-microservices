@@ -1,0 +1,101 @@
+server:
+  port: 8765
+
+spring:
+  application:
+    name: GATEWAY-SERVICE
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
+      routes:
+        - id: contact-service
+          uri: lb://CONTACT-SERVICE
+          predicates:
+            - Path=/api/contact/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: CONTACT-SERVICE
+                fallbackuri: forward:/contactServiceFallBack
+        - id: team-driver-service
+          uri: lb://TEAM-DRIVER-SERVICE
+          predicates:
+            - Path=/drivers/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: team-driver-service
+                fallbackuri: forward:/teamServiceFallBack
+        - id: registration-user-service
+          uri: lb://REGISTRATION-USER-SERVICE
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: registration-user-service
+                fallbackuri: forward:/userServiceFallBack
+        - id: available-driver-service
+          uri: lb://AVAILABLE-DRIVER-JOBS-SERVICE
+          predicates:
+            - Path=/api/v1/availableDrivers/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: available-driver-service
+                fallbackuri: forward:/availableServiceFallBack
+        - id: pre-qualify-now-service
+          uri: lb://PRE-QUALIFY-NOW-SERVICE
+          predicates:
+            - Path=/api/v1/preQualifyDrivers/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: pre-qualify-now-service
+                fallbackuri: forward:/qualifyServiceFallBack
+        - id: freight-quote-service
+          uri: lb://FREIGHT-QUOTE-SERVICE
+          predicates:
+            - Path=/api/v1/freightQuotes/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: freight-quote-service
+                fallbackuri: forward:/freightQuoteServiceFallBack
+
+
+    config:
+      enabled: false
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+  instance:
+    hostname: localhost
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream
+
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
+
+
+#spring.cloud.gateway.discovery.locator.enabled=true
+#spring.cloud.gateway.discovery.locator.lowerCaseServiceId=true
+
